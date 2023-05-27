@@ -11,12 +11,22 @@ use Illuminate\Http\Response;
 class ContactController extends Controller
 {
 
-    public function getAllContact()
+    public function getAllContact(Request $request)
     {
-        $contact = Contact::get();
+        $searchQuery = $request->query('search');
+
+        $query = Contact::query();
+
+        // Apply search filter if the search query is provided
+        if ($searchQuery) {
+            $query->where('full_name', 'LIKE', '%' . $searchQuery . '%');
+        }
+
+        $contacts = $query->paginate(5);
+
         $responseArray = [
             'status' => 'ok',
-            'data' => $contact,
+            'data' => $contacts,
         ];
 
         return response()->json($responseArray, 200);
@@ -38,7 +48,7 @@ class ContactController extends Controller
                 'error' => $validator->errors(),
             ];
 
-            return response()->json($responseArray, 202);
+            return response()->json($responseArray, 422);
         }
         $input = $request->all();
         $contactData = [
@@ -85,7 +95,7 @@ class ContactController extends Controller
         $validator = Validator::make($request->all(), [
             'full_name' => 'required',
             'email' => 'email',
-            'mobile_number' => 'required|digits:10',
+            'mobile_number' => 'digits:10',
 
         ]);
 
